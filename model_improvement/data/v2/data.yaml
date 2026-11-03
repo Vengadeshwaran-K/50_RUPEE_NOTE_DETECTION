@@ -1,0 +1,9 @@
+# Single-class dataset: only the NEW light blue-green Indian Rs50 note (front or back).
+# Paths are relative to this file's folder (Ultralytics resolves them from the yaml location).
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 1
+names:
+  0: rupee_50

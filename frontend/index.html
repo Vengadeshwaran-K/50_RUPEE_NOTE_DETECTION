@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Backend URL used by script.js. Change this if the API runs elsewhere. -->
+  <meta name="rv-api-base" content="http://127.0.0.1:8000">
+  <meta name="theme-color" content="#070b14">
+  <title>RupeeVision AI — ₹50 Note Scanner</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="RupeeVision AI home">
+      <img src="assets/logo.svg" alt="" class="brand-logo" width="44" height="44">
+      <span class="brand-text">
+        <h1>RupeeVision <span class="grad">AI</span></h1>
+        <span class="subtitle">Indian ₹50 banknote detection</span>
+      </span>
+    </a>
+    <div class="status-group" aria-live="polite">
+      <span class="pill" id="backend-status" data-state="pending"><span class="dot"></span><span class="pill-text">Backend: checking…</span></span>
+      <span class="pill" id="model-status" data-state="pending"><span class="dot"></span><span class="pill-text">Model: checking…</span></span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero card">
+      <div class="hero-copy">
+        <span class="eyebrow">Realtime computer vision</span>
+        <h2>Scan a <span class="grad">₹50 note</span> in a single frame.</h2>
+        <p class="hero-sub">Upload an image or point your webcam — a YOLOv8 model runs on the Python backend and returns boxes, confidence and an annotated preview.</p>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-chip">
+          <span class="hero-chip-label">Target</span>
+          <span class="hero-chip-value" id="hero-target">₹50</span>
+        </div>
+        <div class="hero-chip">
+          <span class="hero-chip-label">Engine</span>
+          <span class="hero-chip-value" id="hero-engine">YOLOv8 · ONNX</span>
+        </div>
+        <div class="hero-chip">
+          <span class="hero-chip-label">Mode</span>
+          <span class="hero-chip-value">Local · Private</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-bar card" aria-label="Detection settings">
+      <div class="settings-label">
+        <span class="settings-title">Confidence threshold</span>
+        <span class="hint" id="model-meta">Loading model info…</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="conf-input" min="0.05" max="0.95" step="0.05" value="0.6"
+               aria-label="Confidence threshold">
+        <output id="conf-value" for="conf-input">0.60</output>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <!-- Section A: live webcam -->
+      <section class="card panel" aria-labelledby="webcam-title">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">Live</span>
+            <h2 id="webcam-title">Webcam detection</h2>
+          </div>
+          <span class="badge" id="live-badge" hidden>LIVE</span>
+        </div>
+        <div class="stage" id="webcam-stage">
+          <video id="webcam-video" playsinline muted></video>
+          <img id="webcam-result" alt="Annotated webcam frame" hidden>
+          <div class="stage-empty" id="webcam-placeholder">
+            <span class="stage-icon" aria-hidden="true"></span>
+            <span>Camera is off</span>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="controls-main">
+            <button type="button" class="btn btn-primary" id="btn-camera-start">Start camera</button>
+            <button type="button" class="btn btn-accent" id="btn-detect-start" disabled>Start detection</button>
+          </div>
+          <div class="controls-side">
+            <button type="button" class="btn btn-ghost" id="btn-camera-stop" disabled>Stop camera</button>
+            <button type="button" class="btn btn-ghost" id="btn-detect-stop" disabled>Stop detection</button>
+          </div>
+        </div>
+        <div class="readout">
+          <span class="readout-item"><span class="readout-label">Notes</span><strong id="live-count">–</strong></span>
+          <span class="readout-item"><span class="readout-label">Inference</span><strong id="live-ms">–</strong></span>
+          <span class="readout-item"><span class="readout-label">Rate</span><strong id="live-rate">–</strong></span>
+        </div>
+        <p class="message" id="webcam-message" role="status"></p>
+        <canvas id="capture-canvas" hidden></canvas>
+      </section>
+
+      <!-- Section B: image upload -->
+      <section class="card panel" aria-labelledby="upload-title">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">Upload</span>
+            <h2 id="upload-title">Image detection</h2>
+          </div>
+        </div>
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input type="file" id="file-input" accept="image/jpeg,image/png,.jpg,.jpeg,.png">
+          <img id="upload-preview" alt="Selected image preview" hidden>
+          <span class="dropzone-text" id="dropzone-text">
+            <span class="drop-icon" aria-hidden="true"></span>
+            <strong>Drop an image here</strong>
+            <span class="drop-sub">or click to browse · JPG, JPEG, PNG</span>
+          </span>
+        </label>
+        <div class="controls">
+          <div class="controls-main">
+            <button type="button" class="btn btn-accent" id="btn-upload-detect" disabled>Detect note</button>
+            <button type="button" class="btn btn-ghost" id="btn-choose">Choose image</button>
+            <span class="spinner" id="upload-spinner" hidden aria-label="Detecting"></span>
+          </div>
+          <span class="file-name" id="file-name"></span>
+        </div>
+        <div class="result-wrap" id="upload-result-wrap" hidden>
+          <div class="result-head"><h3>Result</h3></div>
+          <img id="upload-result" alt="Annotated upload result">
+          <div class="readout">
+            <span class="readout-item"><span class="readout-label">Notes</span><strong id="upload-count">–</strong></span>
+            <span class="readout-item"><span class="readout-label">Confidence</span><strong id="upload-conf">–</strong></span>
+            <span class="readout-item"><span class="readout-label">Inference</span><strong id="upload-ms">–</strong></span>
+          </div>
+        </div>
+        <p class="message" id="upload-message" role="status"></p>
+      </section>
+    </div>
+
+    <!-- Section C: statistics -->
+    <section aria-labelledby="stats-title">
+      <div class="section-head">
+        <h2 id="stats-title">Detection statistics</h2>
+        <span class="hint" id="stats-source"></span>
+      </div>
+      <div class="stats">
+        <div class="card stat stat-1">
+          <span class="stat-label">Current detections</span>
+          <span class="stat-value" id="stat-count">–</span>
+        </div>
+        <div class="card stat stat-2">
+          <span class="stat-label">Highest confidence</span>
+          <span class="stat-value" id="stat-conf">–</span>
+        </div>
+        <div class="card stat stat-3">
+          <span class="stat-label">Latest inference</span>
+          <span class="stat-value" id="stat-ms">–</span>
+        </div>
+        <div class="card stat stat-4">
+          <span class="stat-label">Backend / model</span>
+          <span class="stat-value stat-value-sm" id="stat-status">–</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section D: results table -->
+    <section class="card panel" aria-labelledby="results-title">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">Details</span>
+          <h2 id="results-title">Detection results</h2>
+        </div>
+        <span class="hint" id="results-meta"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Label</th><th>Confidence</th><th>Bounding box (x1, y1, x2, y2)</th><th>Size</th></tr>
+          </thead>
+          <tbody id="results-body">
+            <tr class="empty-row"><td colspan="5">No detections yet. Upload an image or start live detection.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>RupeeVision AI</span>
+    <span class="footer-sep">·</span>
+    <span>YOLOv8 ONNX · OpenCV DNN</span>
+    <span class="footer-sep">·</span>
+    <a href="/docs" id="docs-link">API docs</a>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

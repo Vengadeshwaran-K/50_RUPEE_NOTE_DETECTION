@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      RUPEEVISION_BACKEND: opencv
+      RUPEEVISION_WARMUP: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements-dev.txt
+          pip install -e .
+
+      - name: Offline self-checks
+        run: python test.py
+
+      - name: Backend and real-model tests
+        working-directory: backend
+        run: python -m pytest -q

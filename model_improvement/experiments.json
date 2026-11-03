@@ -1,0 +1,68 @@
+{
+ "base": {
+  "model": "model_improvement/yolov8n.pt",
+  "data": "model_improvement/data/v2.yaml",
+  "epochs": 100,
+  "patience": 20,
+  "imgsz": 512,
+  "batch": 8,
+  "optimizer": "AdamW",
+  "lr0": 0.002,
+  "seed": 42,
+  "deterministic": true,
+  "device": "cpu",
+  "workers": 4,
+  "plots": true,
+  "verbose": false
+ },
+ "experiments": {
+  "exp01_control": {
+   "hypothesis": "Control: the original Kaggle recipe (yolov8n, AdamW lr0 0.002, batch 8, patience 20) at the dataset's native 512 px, trained locally so later runs compare like-for-like.",
+   "args": {}
+  },
+  "exp02_oversample8": {
+   "hypothesis": "Positives are 25/382 train images (6.5%). Repeating each positive image 8x in the training list (25 -> 200 sampled positives per epoch, dataset files untouched) should raise confidence on unseen poses of the note.",
+   "args": {
+    "oversample_positives": 8
+   }
+  },
+  "exp03_aug_geo_light": {
+   "hypothesis": "Light rotation/perspective/value augmentation should help with tilted handheld notes without destroying the security features.",
+   "args": {
+    "oversample_positives": 8,
+    "degrees": 10.0,
+    "perspective": 0.0005,
+    "hsv_v": 0.5,
+    "cos_lr": true,
+    "close_mosaic": 10
+   }
+  },
+  "exp04_yolov8s": {
+   "hypothesis": "A larger backbone may separate ₹50 notes from look-alike notes better at the same input size.",
+   "args": {
+    "model": "yolov8s.pt",
+    "oversample_positives": 8
+   }
+  },
+  "exp05_imgsz640": {
+   "hypothesis": "Training and exporting at 640 px preserves more fine detail; compare accuracy against the ~2x inference cost.",
+   "args": {
+    "oversample_positives": 8,
+    "imgsz": 640
+   }
+  },
+  "exp01_control_seed1": {
+   "hypothesis": "Seed repeat of the control to estimate run-to-run noise before trusting small differences.",
+   "args": {
+    "seed": 1
+   }
+  },
+  "exp02_oversample8_seed1": {
+   "hypothesis": "Seed repeat of the oversampling experiment to check that the gain is larger than noise.",
+   "args": {
+    "oversample_positives": 8,
+    "seed": 1
+   }
+  }
+ }
+}

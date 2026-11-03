@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+outputs/*
+model_improvement/data
+model_improvement/experiments
+model_improvement/kaggle_results
+*.log
+.env
+.env.*
+frontend/node_modules

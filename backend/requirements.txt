@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn>=0.29
+opencv-python>=4.8
+numpy>=1.24
+python-multipart>=0.0.9
+Pillow>=10.0        # draws the ₹ symbol on annotated images; falls back to "Rs.50" without it
+onnx>=1.14          # model metadata (input shape, class names)
+onnxruntime>=1.17   # preferred inference backend; OpenCV DNN is the fallback

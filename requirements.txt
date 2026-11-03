@@ -1,0 +1,7 @@
+opencv-python>=4.8
+numpy>=1.24
+Pillow>=10.0        # draws the ₹ symbol (OpenCV fonts cannot); falls back to "Rs.50" without it
+onnx>=1.14          # reads model shapes/metadata; optional, backend probing is used if missing
+onnxruntime>=1.17   # preferred CPU inference backend; OpenCV DNN is the fallback
+# Optional, only for `python test.py --compare-pt`:
+# ultralytics>=8.3
